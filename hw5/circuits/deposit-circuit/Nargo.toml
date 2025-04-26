@@ -1,0 +1,9 @@
+[package]
+name = "deposit_circuit"
+version = "0.1.0"
+authors = ["tlb@bu.edu"]
+type = "bin"
+entry = "src/deposit.nr"
+
+[dependencies]
+

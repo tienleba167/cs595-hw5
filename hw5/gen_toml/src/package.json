@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@aztec/bb.js": "^0.86.0",
+    "ts-node": "^10.9.2"
+  }
+}
