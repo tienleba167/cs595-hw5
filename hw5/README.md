@@ -22,6 +22,74 @@ You have already implemented an off-chain Merkle tree in **Lab 2** with noir and
 
 ---
 
+## Summary of Work Completed
+✅ Noir Circuits Written:
+
+deposit.nr: Proves insertion into a Merkle tree.
+
+withdraw.nr: Proves membership of a commitment without revealing the index.
+
+✅ Circuit Compilation:
+
+nargo compile was used to compile both deposit-circuit and withdraw-circuit.
+
+✅ Verifier Contracts Generated:
+
+bb write_vk was used to generate the verification keys.
+
+bb write_solidity_verifier was used to generate DepositVerifier.sol and WithdrawVerifier.sol.
+
+✅ Smart Contract Ready:
+
+whirlwind.sol manages deposits, withdrawals, and on-chain state updates.
+
+Takes the addresses of the verifier contracts during deployment.
+
+### Commands Used
+
+1. Compile the Circuits
+
+```
+cd circuits/deposit-circuit
+
+nargo compile
+
+```
+
+```
+cd circuits/withdraw-circuit
+
+nargo compile
+
+```
+
+2. Generate Verifier Solidity Contracts
+
+For Deposit Circuit
+```
+mkdir -p ./target/vk
+
+bb write_vk --scheme ultra_honk --oracle_hash keccak -b ./target/deposit_circuit.json -o ./target/vk
+
+bb write_solidity_verifier --scheme ultra_honk -k ./target/vk/vk -o ./target/DepositVerifier.sol
+```
+
+For Withdraw Circuit
+```
+mkdir -p ./target/vk
+
+bb write_vk --scheme ultra_honk --oracle_hash keccak -b ./target/withdraw_circuit.json -o ./target/vk
+
+bb write_solidity_verifier --scheme ultra_honk -k ./target/vk/vk -o ./target/WithdrawVerifier.sol
+```
+
+3. Move Verifiers to Contracts Directory
+```
+mv circuits/deposit-circuit/target/DepositVerifier.sol contracts/
+
+mv circuits/withdraw-circuit/target/WithdrawVerifier.sol contracts/
+```
+
 ## 🧱 Smart Contract Explanation
 
 We provide you with a smart contract (named `Whirlwind`) that manages the deposit and withdrawal operations on-chain. The key responsibilities of this contract include:
@@ -286,113 +354,3 @@ The provided off-chain Merkle tree (from Lab 2) is being used when generating th
   ```
 
 ---
-
-### 🔸 How `demo.ts` Uses CircuitTomlGenerator.ts and the Off-Chain Merkle Tree
-
-The `demo.ts` script serves as an example of how to integrate the off-chain Merkle tree from Lab 2 (implemented in `MerkleTree.ts`) with the logic provided by `CircuitTomlGenerator.ts`. Here’s a high-level overview of its operation:
-
-- **Initialization:**  
-  The demo script creates an instance of the `NoirCircuitTomlGenerator` class. This class instantiates a Merkle tree (with a depth of 8) by calling its constructor, and then calls the `init()` method to initialize the tree—including setting up the BarretenbergSync instance and preparing the zero values for each tree level.
-
-- **Deposit Process:**  
-  The demo script simulates a deposit by creating dummy Field elements (for the secret `id` and randomness `r`). It then calls:
-  ```typescript
-  generator.gentoml('deposit', id, r)
-  ```
-  This call:
-  - Computes the Pedersen hash commitment using the provided Field elements.
-  - Retrieves the current Merkle proof and the tree root.
-  - Inserts the commitment into the tree and updates the Merkle tree state.
-  - Records the deposit details (including the deposit index converted to an Fr element).
-  - Generates a TOML string containing all the inputs required by the deposit Noir circuit.
-
-- **Withdraw Process:**  
-  To simulate a withdrawal, the script calls:
-  ```typescript
-  generator.gentoml('withdraw', index)
-  ```
-  where `index` corresponds to the deposit record you wish to use. This call retrieves the previously recorded deposit details and generates a TOML string formatted for the withdraw circuit inputs.
-
-- **Output:**  
-  Finally, the demo script prints the generated TOML strings to the console, showing how the off-chain state (managed by the Merkle tree from Lab 2) is seamlessly integrated with the requirements of your Noir circuits.
-
-### Example Snippet from `demo.ts`:
-
-```typescript
-import { NoirCircuitTomlGenerator } from './CircuitTomlGenerator';
-import { Fr } from '@aztec/bb.js';
-
-async function runDemo() {
-  // Create and initialize the CircuitTomlGenerator instance.
-  const generator = new NoirCircuitTomlGenerator();
-  await generator.init();
-
-  // Create dummy Field elements for the deposit. Replace these with proper values.
-  const id = Fr.random(); 
-  const r  = Fr.random();
-
-  // Generate the TOML file for a deposit.
-  const depositToml = generator.gentoml('deposit', id, r);
-  console.log('Deposit TOML:\n', depositToml);
-
-  // Generate the TOML file for a withdrawal using the deposit at index 0.
-  const withdrawToml = generator.gentoml('withdraw', 0);
-  console.log('Withdraw TOML:\n', withdrawToml);
-}
-
-runDemo().catch(console.error);
-```
-
-
-
-## 🚀 Running in Codespaces
-
-Same as Lab 1 and 2 — this repo supports zero-setup development via GitHub Codespaces.
-
-1. **Fork** this repo to your own GitHub.
-2. Click the **`<> Code`** button → **`Codespaces` → `Create codespace on main`**
-3. Wait for it to initialize
-4. Use the built-in terminal to run commands
-
----
-
-## 🧩 What's Preinstalled
-
-Everything is ready to go:
-
-- `noirup` + `nargo`
-- `bbup` with Barretenberg backend
-- Node.js + npm + npx
-
----
-
-## ✨ Bonus Points
-
-1. **(+20%) Deploy your contract on-chain:**  
-
-Link your deployed contract to the provided parent contract, and post sample transactions demonstrating both deposits and withdrawals.
-
-*Technical Note:* Noir proofs are bundled with their public inputs. Before submitting the proof to Remix, you must separate the public inputs from the proof. To do this, calculate the size of the public inputs and remove that portion from the beginning of the proof. Refer to the section **"Deploying to Solidity on Sepolia via Remix"** in Lab 1, and update the provided script accordingly to handle the larger public input.
-
-**Deliverables:**
-- Deployed contract address on Sepolia.
-- Transaction hashes (or screenshots) showing at least one deposit and one withdrawal.
-- The modified deployment script used to separate public inputs from the proof.
-
----
-
-2. **(+20%) Frontend Implementation:**  
-
-Develop either a graphical user interface (GUI) or a command-line interface (CLI) to interact with the deposit and withdraw functions of your contract. The interface should stay in sync with the on-chain Merkle tree state by listening to the `Deposit` event. It must also allow any new user (that hasn't interacted with the contract before) to perform deposits and withdrawals from the contract.
-
-**Deliverables:**
-- Source code for the frontend (web or CLI).
-- Screenshots showing the interface in action.
-- Instructions on how to run the interface locally (or a link to a hosted version, if applicable).
-
----
-## 📤 Submission Instructions
-
-- Zip your entire `/whirlwind/` directory, including all circuits, contracts, scripts, and the `README.md`.
-- Upload the resulting `.zip` file to Gradescope under the corresponding assignment.
-- Make sure any screenshots, documents or code for the bonus are also included in the ZIP (or linked in the `README.md`).
